@@ -1,3 +1,13 @@
+###################################################################
+# Title : Final Project : Image Tracing
+# Created By : Aimee Martello and Joseph Carpman
+# Date : 4/11/2021
+# Class : CSCE 489 : Computational Photography
+#
+# This project is an attempt to recreate the illustrator image trace function in both gray scale and color images.
+#
+
+
 import numpy as np
 import random
 from matplotlib import pyplot as plt
@@ -35,7 +45,6 @@ def colorScale(input, numColors):
     for y in range(imageSize[0]):
         for x in range(imageSize[1]):
             output[y][x] = LeastDifference(colors, input[y][x])
-
 
     # return the finished image
     return output
