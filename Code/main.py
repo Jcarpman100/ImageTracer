@@ -6,6 +6,7 @@
 #
 # This project is an attempt to recreate the illustrator image trace function in both gray scale and color images.
 #
+###################################################################
 
 
 import numpy as np
