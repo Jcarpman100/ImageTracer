@@ -12,6 +12,7 @@
 import numpy as np
 import random
 from matplotlib import pyplot as plt
+from scipy import stats
 
 def colorFinder(input, numColors):
     colors = np.zeros((numColors, 3))
@@ -92,14 +93,46 @@ def monochrome(input):
 
     return input
 
+def get_mode(img):
+    unq,count = np.unique(img.reshape(-1,img.shape[-1]), axis=0, return_counts=True)
+    return unq[count.argmax()]
 
+
+# Makes the image look worse and massively increases runtime, will have to think of a better way to do this.
+def smooth(input):
+
+    imageSize = input.shape
+    output = np.zeros(imageSize)
+
+    # For every pixel, find the mode of the surrounding pixels and set this pixel to it.
+    # I expected this to have a smoothing effect and remove some smaller bits from the output, this did not work.
+    for y in range (imageSize[0]):
+        for x in range (imageSize[1]):
+            left = x-1
+            right = x+2
+            top = y-1
+            bottom = y+2
+            if (x == 0):
+                left = x
+            if (y == 0):
+                top = y
+            if (y == imageSize[0] - 1):
+                bottom = y+1
+            if (x == imageSize[1] - 1):
+                right = x+1
+
+            currentArea = input[top:bottom, left:right]
+            print("\r" + str((y / imageSize[0]) * 100) + "%           ", end="")
+            output[y][x] = stats.mode(currentArea, nan_policy='omit').mode[0][0]
+
+    return output
 
 if __name__ == '__main__':
     imageDir = '../Images/'
     outDir = '../Results/'
 
     # Number of images in the input folder
-    N = 5
+    N = 1
 
     # user choices of number of colors and deciding whether to output with color or not.
     colors = int(input("How many colors would you like? : "))
@@ -117,5 +150,7 @@ if __name__ == '__main__':
         else :
             output = colorScale(image, colors)
 
+        # Do not use until function works better
+        # output = smooth(output)
 
         plt.imsave("{}/result_{}.jpg".format(outDir, str(index).zfill(2)), output)
