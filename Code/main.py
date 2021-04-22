@@ -13,8 +13,11 @@ import numpy as np
 import random
 from matplotlib import pyplot as plt
 from scipy import stats
+from sklearn.cluster import KMeans
 
-def colorFinder(input, numColors):
+# random color generator, used to test the color replacement function before color finder was implemented.
+# Might let users ask for it for "funky mode"
+def randomColors(numColors):
     colors = np.zeros((numColors, 3))
 
     for i in range(numColors):
@@ -24,6 +27,25 @@ def colorFinder(input, numColors):
 
     return colors
 
+
+# Find the most dominant colors in the image based on the number of colors requested by the user
+# Uses KMeans - https://scikit-learn.org/stable/modules/generated/sklearn.cluster.KMeans.html
+def colorFinder(input, numColors):
+    # reshape the image so that it is a 1-D list of pixels
+    reshapedInput = input.reshape((-1,3))
+
+    # set up our kmeans clusters
+    cluster = KMeans(n_clusters=numColors)
+
+    # fit our clusters to the pixels of the image
+    colorCluster = cluster.fit(reshapedInput)
+
+    # find the centroids of the color map
+    colors = colorCluster.cluster_centers_
+
+    return colors
+
+# given the array of all colors and the current pixel, finds the best color for the current pixel.
 def LeastDifference(colors, pixel):
 
     differences = np.subtract(colors, pixel)
@@ -32,10 +54,9 @@ def LeastDifference(colors, pixel):
 
     return colors[bestColor]
 
-
+# Traces the image with color
 def colorScale(input, numColors):
     imageSize = input.shape
-
     # find the best colors to choose for the current image, pretty hard
     colors = colorFinder(input, numColors)
 
@@ -51,7 +72,7 @@ def colorScale(input, numColors):
     # return the finished image
     return output
 
-
+# Traces the image with grayscale
 def greyScale(input, numColors):
     imageSize = input.shape
 
@@ -93,6 +114,7 @@ def monochrome(input):
 
     return input
 
+# find the mode color of the surrounding pixels
 def get_mode(img):
     unq,count = np.unique(img.reshape(-1,img.shape[-1]), axis=0, return_counts=True)
     return unq[count.argmax()]
@@ -132,14 +154,16 @@ if __name__ == '__main__':
     outDir = '../Results/'
 
     # Number of images in the input folder
-    N = 1
+    N = 5
 
     # user choices of number of colors and deciding whether to output with color or not.
     colors = int(input("How many colors would you like? : "))
     choice = input("Would you like a (c)olor image or a (g)reyscale image? (c/g)? : ")
 
+    '''
     if (choice == "c"):
         print("Color image processing has not been developed yet. ;;")
+    '''
 
     for index in range(1, N + 1):
         # read the current image
@@ -154,3 +178,4 @@ if __name__ == '__main__':
         # output = smooth(output)
 
         plt.imsave("{}/result_{}.jpg".format(outDir, str(index).zfill(2)), output)
+        print("Image", index, "complete!")
