@@ -14,6 +14,7 @@ import random
 from matplotlib import pyplot as plt
 from scipy import stats
 from sklearn.cluster import KMeans
+import cv2
 
 # random color generator, used to test the color replacement function before color finder was implemented.
 # Might let users ask for it for "funky mode"
@@ -35,7 +36,7 @@ def colorFinder(input, numColors):
     reshapedInput = input.reshape((-1,3))
 
     # set up our kmeans clusters
-    cluster = KMeans(n_clusters=numColors)
+    cluster = KMeans(n_clusters=numColors, precompute_distances=True, n_init=5)
 
     # fit our clusters to the pixels of the image
     colorCluster = cluster.fit(reshapedInput)
@@ -55,11 +56,17 @@ def LeastDifference(colors, pixel):
     return colors[bestColor]
 
 # Traces the image with color
-def colorScale(input, numColors):
+def colorScale(input, numColors, smoothing, colorMode):
     imageSize = input.shape
     # find the best colors to choose for the current image, pretty hard
-    colors = colorFinder(input, numColors)
 
+    if (colorMode == 0):
+        colors = colorFinder(input, numColors)
+    elif (colorMode == 1):
+        colors = randomColors(numColors)
+
+    if (smoothing):
+        input = cv2.GaussianBlur(input, (5, 5), 0)
     # Make the output image full of 0's
     output = np.zeros(imageSize)
 
@@ -68,16 +75,20 @@ def colorScale(input, numColors):
     for y in range(imageSize[0]):
         for x in range(imageSize[1]):
             output[y][x] = LeastDifference(colors, input[y][x])
-
+        print("\r" + str((y / imageSize[0]) * 100) + "%           ", end="")
+    print("\r" + str(100) + "%              ", end="")
     # return the finished image
     return output
 
 # Traces the image with grayscale
-def greyScale(input, numColors):
+def greyScale(input, numColors, smoothing):
     imageSize = input.shape
 
     # Simple conversion to grayscale image
     input = np.sum(input, axis=2) / 3
+
+    if (smoothing):
+        input = cv2.GaussianBlur(input,(5,5),0)
 
     # Make the output image full of 0's
     output = np.zeros((imageSize[0], imageSize[1]))
@@ -109,6 +120,7 @@ def monochrome(input):
                 input[y][x] = 0.0
             else:
                 input[y][x] = 1.0
+        print("\r" + str((y / imageSize[0]) * 100) + "%           ", end="")
 
     input = np.stack([input] * 3, axis=2)
 
@@ -154,25 +166,35 @@ if __name__ == '__main__':
     outDir = '../Results/'
 
     # Number of images in the input folder
-    N = 5
+    N = 9
 
     # user choices of number of colors and deciding whether to output with color or not.
     colors = int(input("How many colors would you like? : "))
     choice = input("Would you like a (c)olor image or a (g)reyscale image? (c/g)? : ")
+    smoothingChoice = input("would you like the image smoothed? (y/n)? : ")
 
-    '''
+    smoother = False
+    if (smoothingChoice == "y"):
+        smoother = True
+
+    colorMode = 0
+
+
+
     if (choice == "c"):
-        print("Color image processing has not been developed yet. ;;")
-    '''
+        funkyChoice = input("Would you like to use random colors rather than the best colors? (y/n)? : ")
+        if (funkyChoice == "y"):
+            colorMode = 1
 
-    for index in range(1, N + 1):
+
+    for index in range(7, N + 1):
         # read the current image
         image = plt.imread(imageDir + "image_" + (str(index).zfill(2)+ ".jpg")) / 255
 
         if (choice != "c"):
-            output = greyScale(image, colors)
+            output = greyScale(image, colors, smoother)
         else :
-            output = colorScale(image, colors)
+            output = colorScale(image, colors, smoother, colorMode)
 
         # Do not use until function works better
         # output = smooth(output)
